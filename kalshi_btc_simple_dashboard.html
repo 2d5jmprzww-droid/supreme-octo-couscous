@@ -1,0 +1,213 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>BTC 15-Minute Reader</title>
+
+<style>
+
+body{background:#101827;color:white;font-family:Arial,sans-serif;padding:16px}
+
+h1{color:#38bdf8;font-size:24px}
+
+.card{background:#1e293b;padding:16px;border-radius:12px;margin:12px 0}
+
+button{background:#0284c7;color:white;border:0;border-radius:8px;padding:12px;margin:5px}
+
+input{padding:10px;width:90%;margin:6px 0;border-radius:6px}
+
+.up{color:#4ade80}.down{color:#fb7185}
+
+small{color:#cbd5e1}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Bitcoin 15-Minute Reader</h1>
+
+<p>Kalshi BTC | Simulation Only</p>
+
+<div class="card">
+
+<h3>Trading Balance</h3>
+
+<h2 id="balance">$100.00</h2>
+
+<p>Starting balance: $100</p>
+
+<p>Maximum per trade: $5</p>
+
+<p>Maximum open exposure: $10</p>
+
+<p>Daily stop-loss: $10</p>
+
+</div>
+
+<div class="card">
+
+<h3>BTC Chart</h3>
+
+<div id="chart"></div>
+
+<small>Chart provided by TradingView. BTC/USD.</small>
+
+</div>
+
+<div class="card">
+
+<h3>15-Minute Candle Reader</h3>
+
+<p>Enter the latest two completed 15-minute candles.</p>
+
+<label>Previous candle closing price</label>
+
+<input id="previous" type="number" step="any" placeholder="Previous close">
+
+<label>Latest candle closing price</label>
+
+<input id="current" type="number" step="any" placeholder="Latest close">
+
+<button onclick="analyze()">Analyze BTC</button>
+
+<h2 id="signal">Waiting for data</h2>
+
+<p id="change"></p>
+
+<small>This is a basic price-direction indicator, not a prediction of the next candle.</small>
+
+</div>
+
+<div class="card">
+
+<h3>Simulated Trading</h3>
+
+<p id="exposure">Open exposure: $0.00</p>
+
+<p id="loss">Today's realized P/L: $0.00</p>
+
+<button onclick="trade()">Approve $5 Simulated Trade</button>
+
+<button onclick="settle(true)">Settle Win</button>
+
+<button onclick="settle(false)">Settle Loss</button>
+
+<p id="status">No trades placed.</p>
+
+<small>Simulated binary contract at $0.50 per share. Fees excluded. No Kalshi orders are sent.</small>
+
+</div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+
+<script>
+
+let balance=100,exposure=0,dailyPL=0,signal="",openTrades=[];
+
+const money=n=>"$"+n.toFixed(2);
+
+function display(){
+
+document.getElementById("balance").textContent=money(balance);
+
+document.getElementById("exposure").textContent="Open exposure: "+money(exposure);
+
+document.getElementById("loss").textContent="Today's realized P/L: "+money(dailyPL);
+
+}
+
+function analyze(){
+
+let a=Number(document.getElementById("previous").value);
+
+let b=Number(document.getElementById("current").value);
+
+if(!a||!b||a<=0||b<=0){alert("Enter two valid BTC prices.");return;}
+
+let pct=(b-a)/a*100;
+
+signal=pct>0?"UP":pct<0?"DOWN":"FLAT";
+
+let el=document.getElementById("signal");
+
+el.textContent="Last completed candle: "+signal;
+
+el.className=pct>0?"up":pct<0?"down":"";
+
+document.getElementById("change").textContent="Change: "+pct.toFixed(3)+"%";
+
+}
+
+function trade(){
+
+if(signal==="FLAT"||!signal){alert("Analyze candles first. A flat reading cannot open a trade.");return;}
+
+if(dailyPL<=-10){alert("Daily stop-loss reached.");return;}
+
+if(exposure+5>10||balance<5){alert("Risk limit reached.");return;}
+
+if(!confirm("Approve a $5 SIMULATED "+signal+" trade?"))return;
+
+balance-=5;exposure+=5;
+
+openTrades.push({direction:signal,cost:5});
+
+document.getElementById("status").textContent="Simulated "+signal+" trade opened.";
+
+display();
+
+}
+
+function settle(win){
+
+if(!openTrades.length){alert("No open simulated trades.");return;}
+
+let t=openTrades.shift();
+
+exposure-=t.cost;
+
+let payout=win?10:0;
+
+balance+=payout;
+
+dailyPL+=payout-t.cost;
+
+document.getElementById("status").textContent="Simulated "+t.direction+" trade settled: "+(win?"WIN":"LOSS");
+
+display();
+
+}
+
+if(window.TradingView){
+
+new TradingView.widget({
+
+container_id:"chart",width:"100%",height:420,
+
+symbol:"BITSTAMP:BTCUSD",interval:"15",
+
+timezone:"America/Los_Angeles",theme:"dark",
+
+style:"1",locale:"en"
+
+});
+
+}
+
+display();
+
+</script>
+
+</body>
+
+</html>
